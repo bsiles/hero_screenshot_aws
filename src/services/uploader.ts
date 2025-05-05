@@ -1,24 +1,30 @@
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { s3 } from "../config/aws.js";
-import { readFile } from "fs/promises";
-import path from "path";
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-export async function uploadToS3(filePath: string): Promise<string> {
-  const buffer = await readFile(filePath);
-  const filename = path.basename(filePath);
-  const bucket = process.env.S3_BUCKET_NAME!;
-  const region = process.env.AWS_REGION!;
-  
-  const command = new PutObjectCommand({
-    Bucket: bucket,
-    Key: `screenshots/${filename}`,
-    Body: buffer,
-    ContentType: "image/png"
-  });
+export class UploaderService {
+  private s3Client: S3Client;
 
-  await s3.send(command);
-  
-  // Construct the S3 URL based on region
-  const s3Domain = `s3.${region}.amazonaws.com`;
-  return `https://${bucket}.${s3Domain}/screenshots/${filename}`;
+  constructor() {
+    this.s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+      },
+    });
+  }
+
+  async upload(screenshot: Buffer): Promise<string> {
+    const key = `screenshots/screenshot-${Date.now()}.png`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+      Body: screenshot,
+      ContentType: 'image/png',
+    });
+
+    await this.s3Client.send(command);
+
+    return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  }
 }

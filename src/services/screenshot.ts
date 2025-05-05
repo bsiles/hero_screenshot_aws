@@ -1,45 +1,44 @@
 import { chromium } from "playwright";
 
-export async function takeScreenshot(url: string, outPath: string) {
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+export class ScreenshotService {
+  async capture(url: string): Promise<Buffer> {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
 
-  await page.goto(url, { waitUntil: "networkidle" });
-  
-  // Wait a bit for any dynamic content to load
-  await page.waitForTimeout(1000);
+    try {
+      // Navigate to the URL
+      await page.goto(url, { waitUntil: "networkidle" });
+      
+      // Wait for dynamic content
+      await page.waitForTimeout(2000);
 
-  // Use JavaScript to find the hero section
-  const dimensions = await page.evaluate(() => {
-    // Find the hero section
-    const hero = document.querySelector('section.bg-dark, section[class*="hero"], section:first-of-type');
-    if (!hero) return null;
+      // Find the hero section and calculate dimensions
+      const dimensions = await page.evaluate(() => {
+        const hero = document.querySelector('header') || document.querySelector('.hero') || document.querySelector('main');
+        if (!hero) return null;
 
-    const heroRect = hero.getBoundingClientRect();
-    const scrollY = window.scrollY;
-    
-    return {
-      x: 0, // Start from the left edge
-      y: scrollY + heroRect.top, // Account for scroll position
-      width: document.documentElement.clientWidth, // Full width
-      height: heroRect.height // Just the hero height
-    };
-  });
+        const rect = hero.getBoundingClientRect();
+        return {
+          x: 0,
+          y: rect.top + window.scrollY,
+          width: document.documentElement.clientWidth,
+          height: rect.height
+        };
+      });
 
-  if (dimensions) {
-    await page.screenshot({
-      path: outPath,
-      clip: {
-        x: dimensions.x,
-        y: dimensions.y,
-        width: dimensions.width,
-        height: dimensions.height
+      if (!dimensions) {
+        throw new Error('Could not find hero section');
       }
-    });
-  } else {
-    // Fallback: full page screenshot
-    await page.screenshot({ path: outPath, fullPage: true });
-  }
 
-  await browser.close();
+      // Take the screenshot
+      const screenshot = await page.screenshot({
+        clip: dimensions
+      });
+
+      return screenshot;
+    } finally {
+      await browser.close();
+    }
+  }
 }
