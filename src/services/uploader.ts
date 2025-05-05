@@ -17,7 +17,7 @@ export class UploaderService {
     const key = `screenshots/screenshot-${Date.now()}.png`;
 
     const command = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
+      Bucket: process.env.S3_BUCKET_NAME,
       Key: key,
       Body: screenshot,
       ContentType: 'image/png',
@@ -25,6 +25,6 @@ export class UploaderService {
 
     await this.s3Client.send(command);
 
-    return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
   }
 }
