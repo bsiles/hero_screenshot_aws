@@ -1,0 +1,30 @@
+{
+  "name": "website-screenshot-agent",
+  "version": "1.0.0",
+  "description": "A tool to capture website screenshots and upload them to S3",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "screenshot-agent": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "node --loader ts-node/esm src/index.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "dotenv": "^16.4.5",
+    "playwright": "^1.42.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/yargs": "^17.0.32",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+} 
